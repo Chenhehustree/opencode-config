@@ -15,12 +15,11 @@ description: "当需要审查代码变更时使用。逐文件审查代码质量
 flowchart TD
     S1["Step 1: 读取 PR 信息"] --> S2["Step 2: 代码审查"]
     S2 --> decision{"审查结果？"}
-
     decision -- "有 blocker" --> reject["输出审查意见<br>告知用户需修复"]
-    reject --> doneReject(("结束 — 需修复"))
-
     decision -- "通过" --> pass["输出审查意见<br>告知用户审查通过"]
-    pass --> donePass(("结束 — 审查通过"))
+    reject --> S3["Step 3: 生成审查报告"]
+    pass --> S3
+    S3 --> done(("结束"))
 ```
 
 ## 强制的工作流程
@@ -127,18 +126,34 @@ flowchart TD
   1. 输出完整的审查意见
   2. 告知用户需要修复哪些问题
   3. 建议用户修复，然后重新提交审查
-  4. **流程结束**
+  4. **进入 Step 3**
 
 - 如只有 **warning / suggestion**：
   1. 输出审查意见供参考
   2. 告知用户代码审查通过（warning 和 suggestion 不阻塞）
+  3. **进入 Step 3**
 
 - 如无任何问题：
   1. 告知用户代码审查通过
+  2. **进入 Step 3**
+
+### Step 3: 生成审查报告
+
+**目的**：根据 Step 1、Step 2 的产出，生成结构化的审查报告文档，便于留存与分享。
+
+1. **读取模板**：读取 `references/review-report-template.md`，按模板中的各级标题和占位说明逐节填充。
+2. **填充内容**：根据 Step 1、Step 2 的产出，填入 PR 概要、审查结果、发现的问题（按严重级别分组）、质量检查结果、总结等。无问题的严重级别小节可省略。
+3. **保存报告**：
+   - 若有 PR 编号：将报告写入 `docs/plans/<YYYY-MM-DD-HH-MM>/PR-<编号>-<标题slug>-review.md`
+   - 若无 PR 编号或路径不可用：询问用户应该如何进行下一步。
 
 ## 完成产出之后
 
-输出审查结论的中文总结，包含：
-- 审查结果（通过 / 需修复）
-- 重点问题列表（如有）
-- blocker 数量 / warning 数量 / suggestion 数量
+Step 3 已生成审查报告。向用户说明：
+- 报告已保存路径（若已写入文件）
+- 审查结论：**审查通过** 或 **需修复**（若有 blocker）
+- 若需修复：简要列出需修复的重点问题，并建议修复后重新提交审查
+
+## References
+
+- **审查报告模板**: `references/review-report-template.md` — 审查报告的结构模板，包含各级标题和占位说明。生成报告时读取此模板并逐节填充。
